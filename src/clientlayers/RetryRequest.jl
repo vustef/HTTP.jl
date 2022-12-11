@@ -1,5 +1,6 @@
 module RetryRequest
 
+using ..Libcurl_Sockets
 using Sockets, LoggingExtras, MbedTLS, OpenSSL
 using ..IOExtras, ..Messages, ..Strings, ..ExceptionRequest, ..Exceptions
 

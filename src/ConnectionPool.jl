@@ -8,7 +8,7 @@ struct to manage the lifetime of a connection and its reuse.
 Methods are provided for `eof`, `readavailable`,
 `unsafe_write` and `close`.
 This allows the `Connection` object to act as a proxy for the
-`TCPSocket` or `SSLContext` that it wraps.
+`Libcurl_TCPSocket` or `SSLContext` that it wraps.
 
 The [`POOL`](@ref) is used to manage connection pooling. Connections
 are identified by their host, port, whether they require
@@ -25,6 +25,7 @@ using Sockets, LoggingExtras, NetworkOptions
 using MbedTLS: SSLConfig, SSLContext, setup!, associate!, hostname!, handshake!
 using MbedTLS, OpenSSL
 using ..IOExtras, ..Conditions, ..Exceptions
+using ..Libcurl_Sockets
 
 const default_connection_limit = Ref(8)
 const nolimit = typemax(Int)
@@ -39,7 +40,7 @@ using .ConnectionPools
 """
     Connection
 
-A `TCPSocket` or `SSLContext` connection to a HTTP `host` and `port`.
+A `Libcurl_TCPSocket` or `SSLContext` connection to a HTTP `host` and `port`.
 
 Fields:
 - `host::String`
@@ -49,7 +50,7 @@ Fields:
 - `peerip`, remote IP adress (used for debug/log messages).
 - `peerport`, remote TCP port number (used for debug/log messages).
 - `localport`, local TCP port number (used for debug messages).
-- `io::T`, the `TCPSocket` or `SSLContext.
+- `io::T`, the `Libcurl_TCPSocket` or `SSLContext.
 - `clientconnection::Bool`, whether the Connection was created from client code (as opposed to server code)
 - `buffer::IOBuffer`, left over bytes read from the connection after
    the end of a response header (or chunksize). These bytes are usually
@@ -391,39 +392,36 @@ function checkconnected(tcp)
     return true
 end
 
-function getconnection(::Type{TCPSocket},
+function getconnection(::Type{Libcurl_TCPSocket},
                        host::AbstractString,
                        port::AbstractString;
                        keepalive::Bool=false,
                        connect_timeout::Int=0,
                        readtimeout::Int=0,
-                       kw...)::TCPSocket
+                       kw...)::Libcurl_TCPSocket
 
     p::UInt = isempty(port) ? UInt(80) : parse(UInt, port)
     @debugv 2 "TCP connect: $host:$p..."
-    addrs = Sockets.getalladdrinfo(host)
     connect_timeout = connect_timeout == 0 && readtimeout > 0 ? readtimeout : connect_timeout
     lasterr = ErrorException("unknown connection error")
 
-    for addr in addrs
-        try
-            return if connect_timeout > 0
-                tcp = Sockets.TCPSocket()
-                Sockets.connect!(tcp, addr, p)
-                try_with_timeout(() -> checkconnected(tcp), connect_timeout, () -> close(tcp)) do
-                    Sockets.wait_connected(tcp)
-                    keepalive && keepalive!(tcp)
-                end
-                return tcp
-            else
-                tcp = Sockets.connect(addr, p)
+    try
+        return if connect_timeout > 0
+            tcp = Libcurl_TCPSocket()
+            connect!(tcp, host, p)
+            try_with_timeout(() -> checkconnected(tcp), connect_timeout, () -> close(tcp)) do
+                Sockets.wait_connected(tcp)
                 keepalive && keepalive!(tcp)
-                tcp
             end
-        catch e
-            lasterr = e isa TimeoutError ? ConnectTimeout(host, port) : e
-            continue
+            return tcp
+        else
+            error("not implemented here")
+            # tcp = Sockets.connect(addr, p)
+            # keepalive && keepalive!(tcp)
+            # tcp
         end
+    catch e
+        lasterr = e isa TimeoutError ? ConnectTimeout(host, port) : e
     end
     # If no connetion could be set up, to any address, throw last error
     throw(lasterr)
@@ -471,7 +469,7 @@ function getconnection(::Type{SSLContext},
 
     port = isempty(port) ? "443" : port
     @debugv 2 "SSL connect: $host:$port..."
-    tcp = getconnection(TCPSocket, host, port; kw...)
+    tcp = getconnection(Libcurl_TCPSocket, host, port; kw...)
     return sslconnection(SSLContext, tcp, host; kw...)
 end
 
@@ -482,11 +480,11 @@ function getconnection(::Type{SSLStream},
 
     port = isempty(port) ? "443" : port
     @debugv 2 "SSL connect: $host:$port..."
-    tcp = getconnection(TCPSocket, host, port; kw...)
+    tcp = getconnection(Libcurl_TCPSocket, host, port; kw...)
     return sslconnection(SSLStream, tcp, host; kw...)
 end
 
-function sslconnection(::Type{SSLStream}, tcp::TCPSocket, host::AbstractString;
+function sslconnection(::Type{SSLStream}, tcp::Libcurl_TCPSocket, host::AbstractString;
     require_ssl_verification::Bool=NetworkOptions.verify_host(host, "SSL"),
     sslconfig::OpenSSL.SSLContext=nosslcontext[],
     kw...)::SSLStream
@@ -500,7 +498,7 @@ function sslconnection(::Type{SSLStream}, tcp::TCPSocket, host::AbstractString;
     return ssl_stream
 end
 
-function sslconnection(::Type{SSLContext}, tcp::TCPSocket, host::AbstractString;
+function sslconnection(::Type{SSLContext}, tcp::Libcurl_TCPSocket, host::AbstractString;
                        require_ssl_verification::Bool=NetworkOptions.verify_host(host, "SSL"),
                        sslconfig::SSLConfig=nosslconfig,
                        kw...)::SSLContext

@@ -3,6 +3,7 @@ module ExceptionRequest
 export exceptionlayer
 
 using ..IOExtras, ..Messages, ..Exceptions
+using ..Libcurl_Sockets
 
 """
     exceptionlayer(handler) -> handler

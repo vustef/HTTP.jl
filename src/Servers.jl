@@ -12,6 +12,7 @@ module Servers
 export listen, listen!, Server, forceclose, port
 
 using Sockets, Logging, LoggingExtras, MbedTLS, Dates
+using ..Libcurl_Sockets
 using MbedTLS: SSLContext, SSLConfig
 using ..IOExtras, ..Streams, ..Messages, ..Parsers, ..ConnectionPool, ..Exceptions
 import ..access_threaded, ..SOCKET_TYPE_TLS, ..@logfmt_str
@@ -78,7 +79,7 @@ Listener(; kw...) = Listener(Sockets.localhost, 8081; kw...)
 Base.isopen(l::Listener) = isopen(l.server)
 Base.close(l::Listener) = close(l.server)
 
-accept(s::Listener{Nothing}) = Sockets.accept(s.server)::TCPSocket
+accept(s::Listener{Nothing}) = Sockets.accept(s.server)::Libcurl_TCPSocket
 accept(s::Listener{SSLConfig}) = getsslcontext(Sockets.accept(s.server), s.ssl)
 
 function getsslcontext(tcp, sslconfig)
@@ -225,7 +226,7 @@ Optional keyword arguments:
     connections. Pass `sslconfig=MbedTLS.SSLConfig(false)` to disable ssl
     verification (useful for testing). Construct a custom `SSLConfig` object
     with `MbedTLS.SSLConfig(certfile, keyfile)`.
- - `tcpisvalid = tcp->true`, function `f(::TCPSocket)::Bool` to check if accepted
+ - `tcpisvalid = tcp->true`, function `f(::Libcurl_TCPSocket)::Bool` to check if accepted
     connections are valid before processing requests. e.g. to do source IP filtering.
  - `readtimeout::Int=0`, close the connection if no data is received for this
     many seconds. Use readtimeout = 0 to disable.

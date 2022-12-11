@@ -2,6 +2,7 @@ module Streams
 
 export Stream, closebody, isaborted, setstatus
 
+using ..Libcurl_Sockets
 using Sockets, LoggingExtras
 using ..IOExtras, ..Messages, ..ConnectionPool, ..Conditions, ..Exceptions
 import ..HTTP # for doc references

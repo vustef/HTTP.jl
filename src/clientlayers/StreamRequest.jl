@@ -3,6 +3,7 @@ module StreamRequest
 using ..IOExtras, ..Messages, ..Streams, ..ConnectionPool, ..Strings, ..RedirectRequest, ..Exceptions
 using LoggingExtras, CodecZlib, URIs
 using SimpleBufferStream: BufferStream
+using ..Libcurl_Sockets
 
 export streamlayer
 

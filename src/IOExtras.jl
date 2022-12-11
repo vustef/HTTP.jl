@@ -10,6 +10,7 @@ module IOExtras
 using Sockets
 using MbedTLS: SSLContext, MbedException
 using OpenSSL: SSLStream
+using ..Libcurl_Sockets
 
 export bytes, isbytes, nbytes, ByteView, nobytes,
        startwrite, closewrite, startread, closeread,
@@ -83,9 +84,9 @@ else
     closeread(io) = nothing
 end
 
-tcpsocket(io::SSLContext)::TCPSocket = io.bio
-tcpsocket(io::SSLStream)::TCPSocket = io.bio_read_stream.io
-tcpsocket(io::TCPSocket)::TCPSocket = io
+tcpsocket(io::SSLContext)::Libcurl_TCPSocket = io.bio
+tcpsocket(io::SSLStream)::Libcurl_TCPSocket = io.bio_read_stream.io
+tcpsocket(io::Libcurl_TCPSocket)::Libcurl_TCPSocket = io
 
 localport(io) = try !isopen(tcpsocket(io)) ? 0 :
                     Sockets.getsockname(tcpsocket(io))[2]

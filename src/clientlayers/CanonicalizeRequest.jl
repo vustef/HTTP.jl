@@ -2,6 +2,8 @@ module CanonicalizeRequest
 
 using ..Messages, ..Strings
 
+using ..Libcurl_Sockets
+
 export canonicalizelayer
 
 """

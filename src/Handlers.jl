@@ -94,7 +94,7 @@ Optional keyword arguments:
 connections. Pass `sslconfig=MbedTLS.SSLConfig(false)` to disable ssl
 verification (useful for testing). Construct a custom `SSLConfig` object
 with `MbedTLS.SSLConfig(certfile, keyfile)`.
-- `tcpisvalid = tcp->true`, function `f(::TCPSocket)::Bool` to check if accepted
+- `tcpisvalid = tcp->true`, function `f(::Libcurl_TCPSocket)::Bool` to check if accepted
 connections are valid before processing requests. e.g. to do source IP filtering.
 - `readtimeout::Int=0`, close the connection if no data is received for this
 many seconds. Use readtimeout = 0 to disable.

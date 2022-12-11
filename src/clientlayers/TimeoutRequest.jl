@@ -2,6 +2,7 @@ module TimeoutRequest
 
 using ..ConnectionPool, ..Streams, ..Exceptions
 using LoggingExtras
+using ..Libcurl_Sockets
 
 export timeoutlayer
 
